@@ -1,7 +1,7 @@
 import sys,os,time
 
-nprocs = "60"
-nrequests = "20"
+nprocs = "6"
+nrequests = "6"
 nruns =  3
 nrepetations =  4
 

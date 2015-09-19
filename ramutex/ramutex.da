@@ -10,8 +10,8 @@ class X(process):
     def setup(numProcs:int, test:dict, mainPID:set):
       self.replies = set()
       self.entryExitTimes = list()
-      self.csEntryExitList = list()
-
+      self.csEntryList = list()
+      self.csReqList = list()
 
     def checkSafety(x):
     	prev = x[0]
@@ -33,10 +33,10 @@ class X(process):
     def run():
  
         await(len(replies) == numProcs)
-        output("Main proc ended number: ", entryExitTimes)
+        output("Main proc ended number: ")
         output("Checking safety.....")
         entryExitTimes = sorted(entryExitTimes,key=getKey)
-        output(entryExitTimes)
+        #output(entryExitTimes)
         
         if(checkSafety(entryExitTimes)):
         	output("Safety check passed")
@@ -47,64 +47,43 @@ class X(process):
         #Fairness Check
         output("In main proc..printing Verifying fairness")
         #output(csEntryExitList)
-        checkFairness(csEntryExitList,2*numProcs)
+        if(checkFairness()):
+        	output("Fairness passed")
+        else:
+        	output("Fairness failed")
 
 
+    def checkFairness():
+		
+        start = 0
+        end = start + self.numProcs
+		
+        while(start < len(csEntryList)):
+            csreq = set()
+            csreq.clear()
+            for j in range(start,end):
+                csreq.add(csReqList[j])
+
+            for j in range(start,end):
+                if(csEntryList[j] not in csreq):
+                    output("Not found",csEntryList[j], j , start, end)
+                    return False
+    	
+            start = start+ self.numProcs
+            end = end + self.numProcs	 		
+    	
+        return True  		
 
 
-    def checkFairness(pids, window):
-
-	    windowMap = dict()
-
-	    #the window is n+1 length.
-
-	    elementToCheck = 0
-
-	    for i in range(len(pids)):
-
-	        #update counts
-
-	        if(windowMap.__contains__(pids[i])):
-
-
-	            windowMap[pids[i]] +=1
-	            #print(windowMap)
-
-	        else:
-	            windowMap[pids[i]] = 1
-	            #print(windowMap)
-
-
-	        #update windowSize
-
-	        windowSize = i - elementToCheck + 1
-
-	        #print("window size: " + str(windowSize))
-
-	        if(windowMap[pids[elementToCheck]] <= 1):
-
-	            if(windowSize == window):
-
-	                print("Failed for " + str(pids[elementToCheck]) + " at :" + str(elementToCheck))
-	                return False
-
-
-	        else:
-
-	            windowMap[pids[elementToCheck]] -= 1
-	            #print("deleted " + str(pids[elementToCheck]) + " window size: " + str(i-elementToCheck))
-	            elementToCheck +=1
-
-	    return True
 
 
     def receive(msg=('CSEntry',source)):
-    	csEntryExitList.append(source)
-    	#output("Added CS entry for ",source)
+    	csEntryList.append(source)
+    	output("Added CS entry for ",source)
 
     def receive(msg=('CSReq',source)):
-    	csEntryExitList.append(source)
-    	#output("Added CS req for ",source)
+    	csReqList.append(source)
+    	output("Added CS req for ",source)
    
 
     def receive(msg=('Return',test), from_=source):
