@@ -1,0 +1,223 @@
+import sys,os
+import time
+
+
+
+
+class X(process):
+
+	
+    def setup(numProcs:int, test:dict, mainPID:set):
+      self.replies = set()
+      self.entryExitTimes = list()
+      self.csEntryExitList = list()
+
+
+    def checkSafety(x):
+    	prev = x[0]
+
+    	x = x[1:]
+
+    	for interval in x:
+    		curr = interval
+    		if(prev[1] >= curr[0]):
+    			output(prev,":",curr)
+    			return False
+    		prev = curr
+    	return True
+	    
+
+    def getKey(item):
+    	return item[0]
+
+    def run():
+ 
+        await(len(replies) == numProcs)
+        output("Main proc ended number: ", entryExitTimes)
+        output("Checking safety.....")
+        entryExitTimes = sorted(entryExitTimes,key=getKey)
+        output(entryExitTimes)
+        
+        if(checkSafety(entryExitTimes)):
+        	output("Safety check passed")
+        else:
+        	output("Safety Failed")
+
+        
+        #Fairness Check
+        output("In main proc..printing Verifying fairness")
+        #output(csEntryExitList)
+        checkFairness(csEntryExitList,2*numProcs)
+
+
+
+
+    def checkFairness(pids, window):
+
+	    windowMap = dict()
+
+	    #the window is n+1 length.
+
+	    elementToCheck = 0
+
+	    for i in range(len(pids)):
+
+	        #update counts
+
+	        if(windowMap.__contains__(pids[i])):
+
+
+	            windowMap[pids[i]] +=1
+	            #print(windowMap)
+
+	        else:
+	            windowMap[pids[i]] = 1
+	            #print(windowMap)
+
+
+	        #update windowSize
+
+	        windowSize = i - elementToCheck + 1
+
+	        #print("window size: " + str(windowSize))
+
+	        if(windowMap[pids[elementToCheck]] <= 1):
+
+	            if(windowSize == window):
+
+	                print("Failed for " + str(pids[elementToCheck]) + " at :" + str(elementToCheck))
+	                return False
+
+
+	        else:
+
+	            windowMap[pids[elementToCheck]] -= 1
+	            #print("deleted " + str(pids[elementToCheck]) + " window size: " + str(i-elementToCheck))
+	            elementToCheck +=1
+
+	    return True
+
+
+    def receive(msg=('CSEntry',source)):
+    	csEntryExitList.append(source)
+    	#output("Added CS entry for ",source)
+
+    def receive(msg=('CSReq',source)):
+    	csEntryExitList.append(source)
+    	#output("Added CS req for ",source)
+   
+
+    def receive(msg=('Return',test), from_=source):
+
+        replies.add(source)
+        entryExitTimes.extend(test)
+        #output("added reply from ",source,":",test)
+
+
+
+
+class P(process):
+    
+    def setup(ps:set, nrounds:int, test:dict, mainPID:set):
+      self.reqc = None
+      self.waiting = set()
+      self.replied = set()
+      self.state = "Wanted"
+      self.startRunningTime = time.time()
+      test[self.id] = []
+      self.csEntryTime = None
+      self.csExitTime = None
+
+
+    def cs(task):
+      # to enter cs, enque and send request to all, then await replies from all
+        --start
+        state = "Wanted"
+        reqc = logical_clock()
+        send(('Request', reqc), to=ps)
+        send(('CSReq',self.id), to=mainPID)
+
+        await(len(replied) == len(ps))
+        state = "Held"
+        csEntryTime = logical_clock()
+        send(('CSEntry',self.id), to=mainPID)
+      # critical section
+      	  
+        task()
+
+      # to exit cs, deque and send releases to all
+        --release
+        state = "Release"
+        reqc = None
+
+        
+
+        csExitTime = logical_clock()
+
+        test[self.id].append((csEntryTime,csExitTime))
+
+        send(('Reply', logical_clock(),self.state), to=waiting)
+        --end
+        waiting = set()
+        replied = set()
+
+    def run():
+
+
+        def anounce():
+        	a = 1
+            #output(self.id," In cs! ")
+        for i in range(nrounds) :
+            cs(anounce)
+        send(('Done', self.id), to=ps)
+        await(each(p in ps, has= received(('Done', p))))
+        #output("Terminating.. CPU TIME: ",time.process_time(), " Running TIME: ", time.time() - self.startRunningTime, test)
+        send(('Return',test[self.id]), to=mainPID)
+
+    # when receiving requests from others, enque and reply
+    def receive(msg=('Request', timestamp), from_=source):
+        if (reqc == None or (timestamp, source) < (reqc, self.id)):
+            send(('Reply', logical_clock(),self.state), to=source)
+        else:
+            waiting.add(source)
+
+    def receive(msg=('Reply', c1, state), from_=source):
+
+        if reqc is not None and c1 > reqc:
+            replied.add(source)
+        #output(self.id,state,reqc," <---", source, state ,  c1)
+
+
+
+    def receive(msg=('Return', test), from_=source):
+
+        output("Return from " + source)
+
+
+
+
+def main():
+    nprocs = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+    nrounds = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+
+    
+
+
+    #print("Arguments from main: " + str(nprocs) + " " + str(nrounds))
+    config(clock='Lamport')
+    ps = new(P, num= nprocs)
+    mainProc = new(X, num= 1)
+    
+
+    for p in mainProc: setup({p}, (nprocs,{}, mainProc))
+    start(mainProc)
+
+        
+    # setup the processes
+    for p in ps: setup({p}, (ps-{p}, nrounds,{}, mainProc))
+    # start the processes
+    start(ps)
+    
+	
+
+

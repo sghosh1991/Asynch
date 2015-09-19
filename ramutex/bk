@@ -1,0 +1,44 @@
+def checkFairness(pids, window):
+
+	    windowMap = dict()
+
+	    #the window is n+1 length.
+
+	    elementToCheck = 0
+
+	    for i in range(len(pids)):
+
+	        #update counts
+
+	        if(windowMap.__contains__(pids[i])):
+
+
+	            windowMap[pids[i]] +=1
+	            #print(windowMap)
+
+	        else:
+	            windowMap[pids[i]] = 1
+	            #print(windowMap)
+
+
+	        #update windowSize
+
+	        windowSize = i - elementToCheck + 1
+
+	        #print("window size: " + str(windowSize))
+
+	        if(windowMap[pids[elementToCheck]] <= 1):
+
+	            if(windowSize == window):
+
+	                print("Failed for " + str(pids[elementToCheck]) + " at :" + str(elementToCheck))
+	                return False
+
+
+	        else:
+
+	            windowMap[pids[elementToCheck]] -= 1
+	            #print("deleted " + str(pids[elementToCheck]) + " window size: " + str(i-elementToCheck))
+	            elementToCheck +=1
+
+	    return True
