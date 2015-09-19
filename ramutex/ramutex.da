@@ -179,9 +179,6 @@ def main():
     nprocs = int(sys.argv[1]) if len(sys.argv) > 1 else 10
     nrounds = int(sys.argv[2]) if len(sys.argv) > 2 else 1
 
-    
-
-
     #print("Arguments from main: " + str(nprocs) + " " + str(nrounds))
     config(clock='Lamport')
     ps = new(P, num= nprocs)

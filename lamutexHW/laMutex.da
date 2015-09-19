@@ -1,0 +1,171 @@
+import sys,time
+
+
+class X(process):
+
+    
+    def setup(numProcs:int, test:dict, mainPID:set):
+      self.replies = set()
+      self.entryExitTimes = list()
+      self.csEntryList = list()
+      self.csReqList = list()
+
+    def checkSafety(x):
+        
+        prev = x[0]
+        x = x[1:]
+
+        for interval in x:
+            curr = interval
+            if(prev[1] >= curr[0]):
+                output(prev,":",curr)
+                return False
+            prev = curr
+        return True
+        
+
+    def getKey(item):
+        return item[0]
+
+    def run():
+ 
+        await(len(replies) == numProcs)
+        #output("Main proc ended number:",entryExitTimes)
+        output("Checking safety.....")
+        entryExitTimes = sorted(entryExitTimes,key=getKey)
+        #output(entryExitTimes)
+        
+        if(checkSafety(entryExitTimes)):
+            output("Safety check passed")
+        else:
+           output("Safety Failed")
+
+        
+        #Fairness Check
+        #output("In main proc..printing Verifying fairness")
+        #output(csEntryExitList)
+        #if(checkFairness()):
+           #output("Fairness passed")
+        #else:
+            #output("Fairness failed")
+
+
+    def checkFairness():
+        
+        start = 0
+        end = start + self.numProcs
+        
+        while(start < len(csEntryList)):
+            csreq = set()
+            csreq.clear()
+            for j in range(start,end):
+                csreq.add(csReqList[j])
+
+            for j in range(start,end):
+                if(csEntryList[j] not in csreq):
+                    output("Not found",csEntryList[j], j , start, end)
+                    return False
+        
+            start = start+ self.numProcs
+            end = end + self.numProcs           
+        
+        return True         
+
+
+
+
+    def receive(msg=('CSEntry',source)):
+        csEntryList.append(source)
+        #output("Added CS entry for ",source)
+
+    def receive(msg=('CSReq',source)):
+        csReqList.append(source)
+        #output("Added CS req for ",source)
+   
+
+    def receive(msg=('Return',test), from_=source):
+
+        replies.add(source)
+        entryExitTimes.extend(test)
+        #output("added reply from ",source,":",test)
+
+
+
+
+
+
+
+class P(process): 
+    def setup(s:set, nrequests:int, test:dict, mainPID:set):  # s is set of all other processes
+        self.q = set()
+        self.startRunningTime = time.time()
+        test[self.id] = []
+        self.csEntryTime = None
+        self.csExitTime = None
+
+    def mutex(task):
+        -- request
+        c = logical_clock()
+        send(('request', c, self.id), to= s)
+        q.add(('request', c, self.id))
+        await(each(('request', c2, p) in q,
+                   has= (c2, p)==(c, self.id) or (c, self.id) < (c2, p)) and
+              each(p in s, has= some(received(('ack', c2, _p)), has= c2 > c)))
+        csEntryTime = logical_clock()
+        -- critical_section
+        task()
+        -- release
+        csExitTime = logical_clock()
+        test[self.id].append((csEntryTime,csExitTime))
+        q.remove(('request', c, self.id))
+        send(('release', logical_clock(), self.id), to= s)
+
+    def receive(msg= ('request', c2, p)):
+        q.add(('request', c2, p))
+        send(('ack', logical_clock(), self.id), to= p)
+
+    def receive(msg= ('release', _, p)):
+
+        for x in setof(('request', c, p), ('request', c, _p) in q):
+            q.remove(x); break
+
+
+    def run():
+        def task():
+            a = 1
+            #output('in cs')
+        for i in range(nrequests):
+            mutex(task)
+
+        send(('done', self.id), to= s)
+        await(each(p in s, has= received(('done', p))))
+        #output('terminating')
+        send(('Return',test[self.id]), to=mainPID)
+
+
+
+
+
+
+
+
+
+
+def main():
+    nprocs = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+    nrounds = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+
+    #print("Arguments from main: " + str(nprocs) + " " + str(nrounds))
+    config(clock='Lamport')
+    ps = new(P, num= nprocs)
+    mainProc = new(X, num= 1)
+    
+
+    for p in mainProc: setup({p}, (nprocs,{}, mainProc))
+    start(mainProc)
+
+        
+    # setup the processes
+    for p in ps: setup({p}, (ps-{p}, nrounds,{}, mainProc))
+    # start the processes
+    start(ps)
