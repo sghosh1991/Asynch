@@ -19,9 +19,9 @@ class X(da.DistProcess):
 
     def setup(self, numProcs, test, mainPID, nReq):
         self.mainPID = mainPID
-        self.numProcs = numProcs
         self.test = test
         self.nReq = nReq
+        self.numProcs = numProcs
         self.replies = set()
         self.entryExitTimes = list()
         self.csEntryList = list()
@@ -42,6 +42,10 @@ class X(da.DistProcess):
             self.output('Safety check passed')
         else:
             self.output('Safety Failed')
+        if self.checkFairness():
+            self.output('Fairness passed')
+        else:
+            self.output('Fairness failed')
 
     def checkSafety(self, x):
         prev = x[0]
@@ -99,9 +103,9 @@ class P(da.DistProcess):
 
     def setup(self, s, nrequests, test, mainPID):
         self.mainPID = mainPID
-        self.s = s
         self.nrequests = nrequests
         self.test = test
+        self.s = s
         self.q = set()
         self.startRunningTime = time.time()
         self.test[self.id] = []
@@ -123,20 +127,21 @@ class P(da.DistProcess):
                 if (not PatternExpr_13.match_iter(self._PReceivedEvent_3, _BoundPattern53_=p)):
                     return False
             return True
-        _st_label_81 = 0
-        while (_st_label_81 == 0):
-            _st_label_81 += 1
+        _st_label_86 = 0
+        while (_st_label_86 == 0):
+            _st_label_86 += 1
             if UniversalOpExpr_3():
-                _st_label_81 += 1
+                _st_label_86 += 1
             else:
-                super()._label('_st_label_81', block=True)
-                _st_label_81 -= 1
+                super()._label('_st_label_86', block=True)
+                _st_label_86 -= 1
         self._send(('Return', self.test[self.id]), self.mainPID)
 
     def mutex(self, task):
         super()._label('request', block=False)
         c = self.logical_clock()
         self._send(('request', c, self.id), self.s)
+        self._send(('CSReq', self.id), self.mainPID)
         self.q.add(('request', c, self.id))
         p = c2 = None
 
@@ -164,15 +169,16 @@ class P(da.DistProcess):
                 if (not ExistentialOpExpr_2(p=p)):
                     return False
             return True
-        _st_label_61 = 0
-        while (_st_label_61 == 0):
-            _st_label_61 += 1
+        _st_label_65 = 0
+        while (_st_label_65 == 0):
+            _st_label_65 += 1
             if (UniversalOpExpr_0() and UniversalOpExpr_1()):
-                _st_label_61 += 1
+                _st_label_65 += 1
             else:
-                super()._label('_st_label_61', block=True)
-                _st_label_61 -= 1
+                super()._label('_st_label_65', block=True)
+                _st_label_65 -= 1
         self.csEntryTime = self.logical_clock()
+        self._send(('CSEntry', self.id), self.mainPID)
         super()._label('critical_section', block=False)
         task()
         super()._label('release', block=False)

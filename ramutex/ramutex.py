@@ -44,6 +44,10 @@ class X(da.DistProcess):
             self.output('Safety check passed')
         else:
             self.output('Safety Failed')
+        if self.checkFairness():
+            self.output('Fairness passed')
+        else:
+            self.output('Fairness failed')
 
     def checkSafety(self, x):
         prev = x[0]
@@ -99,9 +103,9 @@ class P(da.DistProcess):
         self._events.extend([da.pat.EventPattern(da.pat.ReceivedEvent, '_PReceivedEvent_0', PatternExpr_5, sources=None, destinations=None, timestamps=None, record_history=True, handlers=[]), da.pat.EventPattern(da.pat.ReceivedEvent, '_PReceivedEvent_1', PatternExpr_7, sources=[PatternExpr_8], destinations=None, timestamps=None, record_history=None, handlers=[self._P_handler_3]), da.pat.EventPattern(da.pat.ReceivedEvent, '_PReceivedEvent_2', PatternExpr_9, sources=[PatternExpr_10], destinations=None, timestamps=None, record_history=None, handlers=[self._P_handler_4]), da.pat.EventPattern(da.pat.ReceivedEvent, '_PReceivedEvent_3', PatternExpr_11, sources=[PatternExpr_12], destinations=None, timestamps=None, record_history=None, handlers=[self._P_handler_5])])
 
     def setup(self, ps, nrounds, test, mainPID):
-        self.test = test
-        self.ps = ps
         self.mainPID = mainPID
+        self.ps = ps
+        self.test = test
         self.nrounds = nrounds
         self.reqc = None
         self.waiting = set()
@@ -127,14 +131,14 @@ class P(da.DistProcess):
                 if (not PatternExpr_6.match_iter(self._PReceivedEvent_0, _BoundPattern22_=p)):
                     return False
             return True
-        _st_label_83 = 0
-        while (_st_label_83 == 0):
-            _st_label_83 += 1
+        _st_label_86 = 0
+        while (_st_label_86 == 0):
+            _st_label_86 += 1
             if UniversalOpExpr_0():
-                _st_label_83 += 1
+                _st_label_86 += 1
             else:
-                super()._label('_st_label_83', block=True)
-                _st_label_83 -= 1
+                super()._label('_st_label_86', block=True)
+                _st_label_86 -= 1
         self._send(('Return', self.test[self.id]), self.mainPID)
 
     def cs(self, task):
@@ -143,14 +147,14 @@ class P(da.DistProcess):
         self.reqc = self.logical_clock()
         self._send(('Request', self.reqc), self.ps)
         self._send(('CSReq', self.id), self.mainPID)
-        _st_label_65 = 0
-        while (_st_label_65 == 0):
-            _st_label_65 += 1
+        _st_label_68 = 0
+        while (_st_label_68 == 0):
+            _st_label_68 += 1
             if (len(self.replied) == len(self.ps)):
-                _st_label_65 += 1
+                _st_label_68 += 1
             else:
-                super()._label('_st_label_65', block=True)
-                _st_label_65 -= 1
+                super()._label('_st_label_68', block=True)
+                _st_label_68 -= 1
         self.state = 'Held'
         self.csEntryTime = self.logical_clock()
         self._send(('CSEntry', self.id), self.mainPID)
@@ -165,7 +169,7 @@ class P(da.DistProcess):
         self.waiting = set()
         self.replied = set()
 
-    def _P_handler_3(self, source, timestamp):
+    def _P_handler_3(self, timestamp, source):
         if ((self.reqc == None) or ((timestamp, source) < (self.reqc, self.id))):
             self._send(('Reply', self.logical_clock(), self.state), source)
         else:
@@ -173,7 +177,7 @@ class P(da.DistProcess):
     _P_handler_3._labels = None
     _P_handler_3._notlabels = None
 
-    def _P_handler_4(self, c1, source, state):
+    def _P_handler_4(self, source, state, c1):
         if ((not (self.reqc is None)) and (c1 > self.reqc)):
             self.replied.add(source)
     _P_handler_4._labels = None

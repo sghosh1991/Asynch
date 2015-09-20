@@ -47,10 +47,10 @@ class X(process):
         #Fairness Check
         #output("In main proc..printing Verifying fairness")
         #output(csEntryExitList)
-        #if(checkFairness()):
-        	#output("Fairness passed")
-        #else:
-        	#output("Fairness failed")
+        if(checkFairness()):
+        	output("Fairness passed")
+        else:
+        	output("Fairness failed")
 
 
     def checkFairness():

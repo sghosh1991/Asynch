@@ -4,14 +4,14 @@ x = []
 y = []
 z = []
 
-for line in open("/home/santosh/AsyncSystems/DistAlgo-1.0.0b14/examples/lamutexHW/RT_varyProc",'r'):
+for line in open("/home/santosh/AsyncSystems/DistAlgo-1.0.0b14/examples/ramutex/RT_varyProc",'r'):
 
 	data = line.split(":")
 	x.append(int(data[0]))
 	y.append(float(data[1]))
 
 
-for line in open("/home/santosh/AsyncSystems/DistAlgo-1.0.0b14/examples/lamutexHW/CT_varyProc",'r'):
+for line in open("/home/santosh/AsyncSystems/DistAlgo-1.0.0b14/examples/ramutex/CT_varyProc",'r'):
 
 	data = line.split(":")
 	z.append(float(data[1]))

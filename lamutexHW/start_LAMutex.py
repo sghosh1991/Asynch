@@ -1,10 +1,10 @@
 import sys,os,time
 
-nprocs = int(sys.argv[1]) if len(sys.argv) > 2 else 10
-nrequests = int(sys.argv[2]) if len(sys.argv) > 3 else 5
-nruns = int(sys.argv[3]) if len(sys.argv) > 4 else 5
-nruns_c = int(sys.argv[4]) if len(sys.argv) > 5 else 5
-nrepetations = int(sys.argv[5]) if len(sys.argv) > 2 else 4
+nprocs = int(sys.argv[1]) if len(sys.argv) > 2 else 2
+nrequests = int(sys.argv[2]) if len(sys.argv) > 3 else 2
+nruns = int(sys.argv[3]) if len(sys.argv) > 4 else 2
+nruns_c = int(sys.argv[4]) if len(sys.argv) > 5 else 2
+nrepetations = int(sys.argv[5]) if len(sys.argv) > 2 else 2
 
 
 
