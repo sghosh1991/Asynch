@@ -1,0 +1,143 @@
+import sys
+
+class X(process):
+    
+    def setup(nrounds:int, nprocs:int, central:set):
+        self.releases = list()
+        self.holds = list()
+        self.requests = list()
+
+    def checkFairness():
+        output("CHECKING",len(requests),len(holds))
+        j=0
+        if(requests[0] != holds[j]):
+            while(holds[j] != requests[0]):
+                j=j+1
+        i=0
+        while(i<len(requests) and j < len(holds)):
+            if( (i < len(requests)-1) and (requests[i] == requests[i+1])):
+                i = i+1
+                continue
+            
+            output("checking",requests[i],holds[j])
+            if(requests[i] != holds[j]):
+                return False
+            
+            while(j<len(holds) and holds[j] == requests[i]):
+                j = j+1
+
+            i=i+1
+        return True
+        
+
+    def checkSafety():
+        
+        if(len(releases) != len(holds)):
+            return False
+            
+        i=0       
+        for process in releases:
+            output("checking",process)
+
+            if(process != holds[i]):
+                return False
+            i = i+1
+        return True        
+        
+    def run():
+        output("Inside Main",nprocs,nrounds)
+        await(len(releases) == nprocs*nrounds)
+        output("Calling check")
+
+        if(checkSafety()):
+            output("SAFETY CHECK PASSED")
+        else:
+            output("SAFETY CHECK FAILED")
+
+        if(checkFairness()):
+            output("Fairness CHECK PASSED")
+        else:
+            output("Fairness CHECK FAILED")
+        output("Main ended")    
+
+    def receive(msg=('exit',source)):
+        releases.append(source)
+        #output("Added exit",source)
+
+    def receive(msg=('entry',source)):
+        holds.append(source)
+        output("Added entry",source)
+
+    def receive(msg=('request',source)):
+        requests.append(source)
+        output("Added request",source)    
+
+class P(process):
+    def setup(ps:set, orig_token:bool,
+              nrounds:int, central:set): # other procs, and whether self.id holds token
+        self.RN = dict((p, 0) for p in ps)        # last request number received
+        # Token structure:
+        self.Q = []                   # queue of pending requests
+        self.LN = dict((p, 0) for p in ps) # last request number for which token was granted
+
+    def cs(task):
+        -- request
+        if not haveToken():
+            RN[self.id] += 1
+            send(('request', self.id, RN[self.id]), to=ps)
+            #output("Sending request",self.id)
+            send(('request',self.id), to=central)        
+            #await(some(rcvd(('token', _, _LN1)), LN1[self.id] < rn))
+            await(haveToken())
+        send(('entry',self.id), to=central)    
+        task()                   #critical section
+        send(('exit',self.id), to=central)
+        LN[self.id] = RN[self.id]
+        Q.extend(listof(p, p in ps, p not in Q, RN[p] == LN[p] + 1))
+        if len(Q) > 0:
+            p = Q.pop()
+            send(('token', Q, LN), to=p)
+        
+    def receive(msg=('token', Q1, LN1)):
+        Q = Q1
+        LN = LN1
+
+    def receive(msg=('request', p, n)):
+        RN[p] = max((RN[p], n))
+        if (haveToken() and RN[p] == LN[p] + 1):
+            send(('token', Q, LN), to=p)
+
+    def haveToken():
+        return (orig_token and not some(sent(('token', _, _)))) or\
+                some(received(('token', _, LN1)),
+                     has=(not some(sent(('token', _, LN2)),
+                                   has=(LN2[self.id] > LN1[self.id]))))
+
+    def run():
+        def anounce():
+            output("In cs!")
+        if haveToken():
+            send(('request',self.id), to=central)
+            output("I'm lucky!")
+        for i in range(nrounds):
+            cs(anounce)
+        send(('Done',), to=ps)
+        await(each(p in ps, has= received(('Done',), from_=p)))
+        output("Done!")
+
+def main():
+    nprocs = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+    nrounds = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+    central = new(X, num= 1)
+    for p in central: setup({p}, (nrounds,nprocs, central))
+    start(central)
+ 
+     # create n process
+    ps = new(P, num= nprocs)
+
+    # setup the processes
+    lucky = ps.pop()
+
+    setup(ps, (ps|{lucky}, False, nrounds,central))
+    setup({lucky}, (ps|{lucky}, True, nrounds,central))
+    start(ps|{lucky})

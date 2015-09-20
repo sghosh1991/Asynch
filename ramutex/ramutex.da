@@ -33,8 +33,8 @@ class X(process):
     def run():
  
         await(len(replies) == numProcs)
-        output("Main proc ended number: ")
-        output("Checking safety.....")
+        #output("Main proc ended number: ")
+        #output("Checking safety.....")
         entryExitTimes = sorted(entryExitTimes,key=getKey)
         #output(entryExitTimes)
         
@@ -45,12 +45,12 @@ class X(process):
 
         
         #Fairness Check
-        output("In main proc..printing Verifying fairness")
+        #output("In main proc..printing Verifying fairness")
         #output(csEntryExitList)
-        if(checkFairness()):
-        	output("Fairness passed")
-        else:
-        	output("Fairness failed")
+        #if(checkFairness()):
+        	#output("Fairness passed")
+        #else:
+        	#output("Fairness failed")
 
 
     def checkFairness():
@@ -79,11 +79,11 @@ class X(process):
 
     def receive(msg=('CSEntry',source)):
     	csEntryList.append(source)
-    	output("Added CS entry for ",source)
+    	#output("Added CS entry for ",source)
 
     def receive(msg=('CSReq',source)):
     	csReqList.append(source)
-    	output("Added CS req for ",source)
+    	#output("Added CS req for ",source)
    
 
     def receive(msg=('Return',test), from_=source):
