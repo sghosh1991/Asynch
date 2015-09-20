@@ -17,10 +17,11 @@ class X(da.DistProcess):
         super().__init__(parent, initq, channel, props)
         self._events.extend([da.pat.EventPattern(da.pat.ReceivedEvent, '_XReceivedEvent_0', PatternExpr_0, sources=None, destinations=None, timestamps=None, record_history=None, handlers=[self._X_handler_0]), da.pat.EventPattern(da.pat.ReceivedEvent, '_XReceivedEvent_1', PatternExpr_1, sources=None, destinations=None, timestamps=None, record_history=None, handlers=[self._X_handler_1]), da.pat.EventPattern(da.pat.ReceivedEvent, '_XReceivedEvent_2', PatternExpr_2, sources=[PatternExpr_3], destinations=None, timestamps=None, record_history=None, handlers=[self._X_handler_2])])
 
-    def setup(self, numProcs, test, mainPID):
+    def setup(self, numProcs, test, mainPID, nReq):
         self.mainPID = mainPID
-        self.test = test
         self.numProcs = numProcs
+        self.test = test
+        self.nReq = nReq
         self.replies = set()
         self.entryExitTimes = list()
         self.csEntryList = list()
@@ -97,10 +98,10 @@ class P(da.DistProcess):
         self._events.extend([da.pat.EventPattern(da.pat.ReceivedEvent, '_PReceivedEvent_0', PatternExpr_6, sources=None, destinations=None, timestamps=None, record_history=True, handlers=[]), da.pat.EventPattern(da.pat.ReceivedEvent, '_PReceivedEvent_1', PatternExpr_8, sources=None, destinations=None, timestamps=None, record_history=None, handlers=[self._P_handler_3]), da.pat.EventPattern(da.pat.ReceivedEvent, '_PReceivedEvent_2', PatternExpr_9, sources=None, destinations=None, timestamps=None, record_history=None, handlers=[self._P_handler_4]), da.pat.EventPattern(da.pat.ReceivedEvent, '_PReceivedEvent_3', PatternExpr_12, sources=None, destinations=None, timestamps=None, record_history=True, handlers=[])])
 
     def setup(self, s, nrequests, test, mainPID):
-        self.nrequests = nrequests
         self.mainPID = mainPID
-        self.test = test
         self.s = s
+        self.nrequests = nrequests
+        self.test = test
         self.q = set()
         self.startRunningTime = time.time()
         self.test[self.id] = []
@@ -200,7 +201,7 @@ def main():
     ps = da.new(P, num=nprocs)
     mainProc = da.new(X, num=1)
     for p in mainProc:
-        da.setup({p}, (nprocs, {}, mainProc))
+        da.setup({p}, (nprocs, {}, mainProc, nrounds))
     da.start(mainProc)
     for p in ps:
         da.setup({p}, ((ps - {p}), nrounds, {}, mainProc))

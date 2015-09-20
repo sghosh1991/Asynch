@@ -1,20 +1,34 @@
 import sys,os,time
 
-nprocs = int(sys.argv[1]) if len(sys.argv) > 2 else 4
+nprocs = int(sys.argv[1]) if len(sys.argv) > 2 else 10
 nrequests = int(sys.argv[2]) if len(sys.argv) > 2 else 5
-nruns = int(sys.argv[3]) if len(sys.argv) > 2 else 1
-nruns_c = int(sys.argv[4]) if len(sys.argv) > 2 else 3
+nruns = int(sys.argv[3]) if len(sys.argv) > 2 else 5
+nruns_c = int(sys.argv[4]) if len(sys.argv) > 2 else 5
 nrepetations = int(sys.argv[5]) if len(sys.argv) > 2 else 4
 
 
-os.system("python3 -m da /home/santosh/AsyncSystems/DistAlgo-1.0.0b14/examples/lamutexHW/laMutex.da " + str(nprocs) + " " + str(nrequests))
 
 
-#======================= Correctness testing
+#======================= Correctness testing ===============================
+
+for i in range(nruns):
+
+	for num_procs in range(1,nprocs+1):
+
+		#print("ss")
+
+		os.system("python3 -m da /home/santosh/AsyncSystems/DistAlgo-1.0.0b14/examples/lamutexHW/laMutex.da " + str(num_procs) + " " + str(nrequests))
 
 
 
 
+for i in range(nruns):
+
+	for num_req in range(1,nrequests+1):
+
+		#print("ss")
+
+		os.system("python3 -m da /home/santosh/AsyncSystems/DistAlgo-1.0.0b14/examples/lamutexHW/laMutex.da " + str(nprocs) + " " + str(num_req))
 
 
 
@@ -44,9 +58,9 @@ for s in range(nruns_c):
 	x = []
 	y = []
 
-	for numRequests in range(1,nrequests):
+	for numRequests in range(1,nrequests+1):
 
-		for m in range(1,nrepetations):
+		for m in range(1,nrepetations+1):
 
 			statsRunTime = []
 			statsCPUTime = []
@@ -133,9 +147,9 @@ for s in range(nruns_c):
 	x = []
 	y = []
 
-	for num_proc in range(1,nprocs):
+	for num_proc in range(1,nprocs+1):
 
-		for m in range(1,nrepetations):
+		for m in range(nrepetations):
 
 			statsRunTime = []
 			statsCPUTime = []

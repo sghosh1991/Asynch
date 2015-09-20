@@ -4,7 +4,7 @@ import sys,time
 class X(process):
 
     
-    def setup(numProcs:int, test:dict, mainPID:set):
+    def setup(numProcs:int, test:dict, mainPID:set, nReq:int):
       self.replies = set()
       self.entryExitTimes = list()
       self.csEntryList = list()
@@ -28,7 +28,8 @@ class X(process):
         return item[0]
 
     def run():
- 
+        
+        #log = open("/home/santosh/AsyncSystems/DistAlgo-1.0.0b14/examples/lamutexHW/lamutex.log","a")
         await(len(replies) == numProcs)
         #output("Main proc ended number:",entryExitTimes)
         output("Checking safety.....")
@@ -37,6 +38,8 @@ class X(process):
         
         if(checkSafety(entryExitTimes)):
             output("Safety check passed")
+            #log.write("Safety Passed for" + str(numProcs) + " processes and " + str(nReq) + " requests\n")
+            #log.close()
         else:
            output("Safety Failed")
 
@@ -161,7 +164,7 @@ def main():
     mainProc = new(X, num= 1)
     
 
-    for p in mainProc: setup({p}, (nprocs,{}, mainProc))
+    for p in mainProc: setup({p}, (nprocs,{}, mainProc, nrounds))
     start(mainProc)
 
         
